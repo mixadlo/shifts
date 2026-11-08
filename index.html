@@ -58,6 +58,7 @@ h2{font-family:Unbounded,sans-serif;font-weight:500;font-size:20px;margin:44px 0
 footer{margin-top:36px;text-align:center;color:var(--dim);font-size:13px}
 @media(max-width:560px){.c{min-height:62px;padding:5px}.t small{display:none}.t{font-size:10px}.n{font-size:13px}.c.today::after{display:none}.cal{gap:4px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.c{opacity:1}}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:44px 0 14px}.nav h2{margin:0;text-align:center;flex:1}.nav button{width:48px;height:48px;border-radius:8px;border:1px solid var(--vac);background:var(--panel);color:var(--vac);font-size:26px;line-height:1;cursor:pointer;box-shadow:0 0 14px -6px var(--vac);transition:transform .15s,background .15s}.nav button:hover:not(:disabled){background:var(--vac);color:var(--bg);transform:scale(1.08)}.nav button:disabled{opacity:.25;cursor:default;box-shadow:none}.nav button:focus-visible{outline:2px solid var(--no);outline-offset:2px}.note{padding:28px;text-align:center;color:var(--dim);border:1px dashed var(--line);border-radius:8px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -70,7 +71,7 @@ footer{margin-top:36px;text-align:center;color:var(--dim);font-size:13px}
     <div class="cd" id="cdbox"><span id="cdlabel"></span><b id="cd"></b></div>
   </section>
 
-  <h2>График на ноябрь 2026</h2>
+  <div class="nav"><button id="prev" aria-label="Предыдущий месяц">‹</button><h2 id="mtitle"></h2><button id="next" aria-label="Следующий месяц">›</button></div>
   <div class="legend">
     <em style="--c:var(--day)">Дневная 07:00–19:00</em>
     <em style="--c:var(--night)">Ночная 19:00–07:00</em>
@@ -79,19 +80,28 @@ footer{margin-top:36px;text-align:center;color:var(--dim);font-size:13px}
   </div>
   <div class="cal" id="cal"></div>
 
-  <h2>Ноябрь в цифрах</h2>
-  <div class="stats" id="stats"></div>
+  <div class="note" id="note" style="display:none"></div>
+  <div id="statsbox"><h2 id="stitle"></h2>
+  <div class="stats" id="stats"></div></div>
 </div>
 
 <script>
 // ===== НАСТРОЙКИ: правь здесь =====
-const YEAR = 2026, MONTH = 11;
 const DAY_START = 7, NIGHT_START = 19, SHIFT_HOURS = 12;
 // DP = дневная, NB = ночная, DOV = отпуск. Остальные дни — выходные.
-const PLAN = {1:"DOV",2:"DOV",6:"DP",7:"DP",11:"NB",15:"DP",16:"DP",18:"NB",20:"NB",22:"NB",24:"DP",25:"DP",28:"DP",29:"NB"};
+// Новый месяц: добавь строку вида "2026-12": {3:"DP", 4:"NB"},
+const PLANS = {
+  "2026-11": {1:"DOV",2:"DOV",6:"DP",7:"DP",11:"NB",15:"DP",16:"DP",18:"NB",20:"NB",22:"NB",24:"DP",25:"DP",28:"DP",29:"NB"}
+};
 // ==================================
 
+const MN=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MG=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const DOW=["вс","пн","вт","ср","чт","пт","сб"];
+const NAME={DP:["День","07–19"],NB:["Ночь","19–07"],DOV:["Отпуск",""]};
 const pad = n => String(n).padStart(2,"0");
+const ym = (y,m) => y+"-"+pad(m);
+const idx = (y,m) => y*12+m-1;
 const fmt = new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"});
 function now(){
   const p = Object.fromEntries(fmt.formatToParts(new Date()).map(x=>[x.type,x.value]));
@@ -100,67 +110,109 @@ function now(){
   if(qd && /^\d{4}-\d{2}-\d{2}$/.test(qd)){const a=qd.split("-");o.y=+a[0];o.m=+a[1];o.d=+a[2];o.h=q.get("h")?+q.get("h"):12;o.mi=0;o.s=0}
   return o;
 }
-const utc = (d,h) => Date.UTC(YEAR,MONTH-1,d,h);
-const startOf = d => utc(d, PLAN[d]==="NB" ? NIGHT_START : DAY_START);
-const shifts = Object.keys(PLAN).map(Number).filter(d=>PLAN[d]!=="DOV").sort((a,b)=>a-b).map(d=>({d,t:PLAN[d],s:startOf(d),e:startOf(d)+SHIFT_HOURS*36e5}));
+function planOf(y,m,d){
+  const dt=new Date(Date.UTC(y,m-1,d));
+  const p=PLANS[ym(dt.getUTCFullYear(),dt.getUTCMonth()+1)];
+  return p?p[dt.getUTCDate()]:undefined;
+}
+const startOf=(y,m,d,t)=>Date.UTC(y,m-1,d,t==="NB"?NIGHT_START:DAY_START);
+const shifts=[];
+Object.keys(PLANS).forEach(k=>{const [y,m]=k.split("-").map(Number);
+  Object.keys(PLANS[k]).forEach(d=>{const t=PLANS[k][d];if(t==="DOV")return;const s=startOf(y,m,+d,t);shifts.push({y,m,d:+d,t,s,e:s+SHIFT_HOURS*36e5})})});
+shifts.sort((a,b)=>a.s-b.s);
 const hhmm = ms => {const x=new Date(ms);return pad(x.getUTCHours())+":"+pad(x.getUTCMinutes())};
 const dur = ms => {ms=Math.max(0,ms);const s=Math.floor(ms/1000);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),c=s%60;return (d?d+"д ":"")+pad(h)+":"+pad(m)+":"+pad(c)};
-const ru = (d)=>["вс","пн","вт","ср","чт","пт","сб"][new Date(Date.UTC(YEAR,MONTH-1,d)).getUTCDay()];
 
+// ----- состояние просмотра -----
+const keys=Object.keys(PLANS).sort();
+const N0=now();
+const first=keys.length?keys[0].split("-").map(Number):[N0.y,N0.m];
+const last=keys.length?keys[keys.length-1].split("-").map(Number):[N0.y,N0.m];
+const MIN=Math.min(idx(first[0],first[1]),idx(N0.y,N0.m));
+const MAX=Math.max(idx(last[0],last[1])+1,idx(N0.y,N0.m));
+let view=readHash();
+function readHash(){
+  const h=location.hash.match(/^#(\d{4})-(\d{2})$/);
+  let i=h?idx(+h[1],+h[2]):idx(N0.y,N0.m);
+  i=Math.min(MAX,Math.max(MIN,i));return {y:Math.floor(i/12),m:i%12+1};
+}
+function go(delta){const i=idx(view.y,view.m)+delta;if(i<MIN||i>MAX)return;location.hash="#"+ym(Math.floor(i/12),i%12+1)}
+document.getElementById("prev").onclick=()=>go(-1);
+document.getElementById("next").onclick=()=>go(1);
+addEventListener("hashchange",()=>{view=readHash();build()});
+
+// ----- календарь -----
+function build(){
+  const cal=document.getElementById("cal");cal.innerHTML="";
+  ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].forEach(x=>{const e=document.createElement("div");e.className="dow";e.textContent=x;cal.appendChild(e)});
+  const plan=PLANS[ym(view.y,view.m)]||{};
+  const has=!!PLANS[ym(view.y,view.m)];
+  const lead=(new Date(Date.UTC(view.y,view.m-1,1)).getUTCDay()+6)%7, days=new Date(Date.UTC(view.y,view.m,0)).getUTCDate();
+  let i=0;
+  for(let k=0;k<lead;k++){const e=document.createElement("div");e.className="c e";cal.appendChild(e)}
+  for(let d=1;d<=days;d++){
+    const t=plan[d],e=document.createElement("div");
+    e.id="d"+d;e.className="c"+(t?" "+t:"");e.style.setProperty("--i",i++);
+    e.innerHTML='<span class="n">'+d+'</span>'+(t?'<span class="t">'+NAME[t][0]+(NAME[t][1]?'<small>'+NAME[t][1]+'</small>':'')+'</span>':'');
+    cal.appendChild(e);
+  }
+  document.getElementById("mtitle").textContent=MN[view.m-1]+" "+view.y;
+  const vi=idx(view.y,view.m);
+  document.getElementById("prev").disabled=vi<=MIN;
+  document.getElementById("next").disabled=vi>=MAX;
+  const note=document.getElementById("note"),sb=document.getElementById("statsbox");
+  if(has){
+    note.style.display="none";sb.style.display="";
+    const cnt=t=>Object.values(plan).filter(x=>x===t).length;
+    document.getElementById("stitle").textContent=MN[view.m-1]+" в цифрах";
+    document.getElementById("stats").innerHTML=[["DP","Дневных смен",cnt("DP")],["NB","Ночных смен",cnt("NB")],["DOV","Дней отпуска",cnt("DOV")],["","Выходных",days-Object.keys(plan).length]]
+     .map(a=>'<div class="s" style="--k:'+({DP:"var(--day)",NB:"var(--night)",DOV:"var(--vac)"}[a[0]]||"var(--yes)")+'"><b>'+a[2]+'</b><span>'+a[1]+'</span></div>').join("");
+  }else{
+    sb.style.display="none";note.style.display="";
+    note.textContent="График на "+MN[view.m-1].toLowerCase()+" ещё не добавлен";
+  }
+  markToday();
+}
+function markToday(){
+  document.querySelectorAll(".c.today").forEach(e=>e.classList.remove("today"));
+  const n=now();
+  if(n.y===view.y&&n.m===view.m){const el=document.getElementById("d"+n.d);if(el)el.classList.add("today")}
+}
+
+// ----- главный статус -----
 function render(){
-  const n = now(), T = Date.UTC(n.y,n.m-1,n.d,n.h,n.mi,n.s);
-  document.getElementById("clock").textContent = pad(n.h)+":"+pad(n.mi)+":"+pad(n.s);
-  document.getElementById("date").textContent = pad(n.d)+"."+pad(n.m)+"."+n.y;
-  const big=document.getElementById("big"), sub=document.getElementById("sub"), root=document.documentElement.style;
-  const cur = shifts.find(x=>T>=x.s && T<x.e);
-  const next = shifts.find(x=>x.s>T);
-  const inMonth = n.y===YEAR && n.m===MONTH;
-  let word, color, text, label="", cd="";
-  if(!inMonth){word="?";color="var(--dim)";text="В графике только ноябрь 2026";document.getElementById("cdbox").style.display="none"}
+  const n=now(), T=Date.UTC(n.y,n.m-1,n.d,n.h,n.mi,n.s);
+  document.getElementById("clock").textContent=pad(n.h)+":"+pad(n.mi)+":"+pad(n.s);
+  document.getElementById("date").textContent=pad(n.d)+"."+pad(n.m)+"."+n.y;
+  const big=document.getElementById("big"),sub=document.getElementById("sub"),box=document.getElementById("cdbox");
+  const cur=shifts.find(x=>T>=x.s&&T<x.e), next=shifts.find(x=>x.s>T);
+  const hasData=!!PLANS[ym(n.y,n.m)];
+  let word,color,text,label="",cd="";
+  if(!hasData&&!cur){word="?";color="var(--dim)";text="График на этот месяц ещё не добавлен"}
   else{
-    document.getElementById("cdbox").style.display="";
-    const today = PLAN[n.d], prevNight = PLAN[n.d-1]==="NB" && n.h<DAY_START;
+    const today=planOf(n.y,n.m,n.d);
     if(cur){
       word="ДА";color="var(--yes)";
       text="Сейчас на смене ("+(cur.t==="NB"?"ночная":"дневная")+") до "+hhmm(cur.e);
       label="До конца смены";cd=dur(cur.e-T);
     }else if(today==="DP"||today==="NB"){
       word="ДА";color="var(--yes)";
-      text = T<startOf(n.d) ? "Сегодня "+(today==="NB"?"ночная":"дневная")+" смена, начало в "+hhmm(startOf(n.d)) : "Смена на сегодня уже закончилась";
+      const st=startOf(n.y,n.m,n.d,today);
+      text=T<st?"Сегодня "+(today==="NB"?"ночная":"дневная")+" смена, начало в "+hhmm(st):"Смена на сегодня уже закончилась";
       if(next){label="До следующей смены";cd=dur(next.s-T)}
     }else{
       word="НЕТ";color=today==="DOV"?"var(--vac)":"var(--no)";
-      text = today==="DOV" ? "Миша в отпуске" : "Сегодня у Миши выходной";
-      if(next){text+=" · следующая смена: "+ru(next.d)+", "+next.d+" ноября ("+(next.t==="NB"?"ночь":"день")+")";label="До смены";cd=dur(next.s-T)}
+      text=today==="DOV"?"Миша в отпуске":"Сегодня у Миши выходной";
+      if(next){const wd=DOW[new Date(Date.UTC(next.y,next.m-1,next.d)).getUTCDay()];
+        text+=" · следующая смена: "+wd+", "+next.d+" "+MG[next.m-1]+" ("+(next.t==="NB"?"ночь":"день")+")";label="До смены";cd=dur(next.s-T)}
     }
   }
-  big.textContent=word;big.dataset.t=word;root.setProperty("--cur",color);sub.textContent=text;
+  big.textContent=word;big.dataset.t=word;document.documentElement.style.setProperty("--cur",color);sub.textContent=text;
   document.getElementById("cdlabel").textContent=label;document.getElementById("cd").textContent=cd;
-  document.getElementById("cdbox").style.visibility=cd?"visible":"hidden";
-  document.querySelectorAll(".c.today").forEach(e=>e.classList.remove("today"));
-  if(inMonth){const el=document.getElementById("d"+n.d);if(el)el.classList.add("today")}
+  box.style.visibility=cd?"visible":"hidden";
+  markToday();
 }
-
-// календарь
-const cal=document.getElementById("cal");
-["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].forEach(x=>{const e=document.createElement("div");e.className="dow";e.textContent=x;cal.appendChild(e)});
-const first=(new Date(Date.UTC(YEAR,MONTH-1,1)).getUTCDay()+6)%7, days=new Date(Date.UTC(YEAR,MONTH,0)).getUTCDate();
-let i=0;
-for(let k=0;k<first;k++){const e=document.createElement("div");e.className="c e";cal.appendChild(e)}
-const NAME={DP:["День","07–19"],NB:["Ночь","19–07"],DOV:["Отпуск",""]};
-for(let d=1;d<=days;d++){
-  const t=PLAN[d],e=document.createElement("div");
-  e.id="d"+d;e.className="c"+(t?" "+t:"");e.style.setProperty("--i",i++);
-  e.innerHTML='<span class="n">'+d+'</span>'+(t?'<span class="t">'+NAME[t][0]+(NAME[t][1]?'<small>'+NAME[t][1]+'</small>':'')+'</span>':'');
-  cal.appendChild(e);
-}
-// статистика
-const cnt=t=>Object.values(PLAN).filter(x=>x===t).length;
-const off=days-Object.keys(PLAN).length;
-document.getElementById("stats").innerHTML=[["DP","Дневных смен",cnt("DP")],["NB","Ночных смен",cnt("NB")],["DOV","Дней отпуска",cnt("DOV")],["",  "Выходных",off]]
- .map(a=>'<div class="s" style="--k:'+({DP:"var(--day)",NB:"var(--night)",DOV:"var(--vac)"}[a[0]]||"var(--yes)")+'"><b>'+a[2]+'</b><span>'+a[1]+'</span></div>').join("");
-
-render();setInterval(render,1000);
+build();render();setInterval(render,1000);
 </script>
 </body>
 </html>
