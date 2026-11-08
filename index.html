@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Миша сегодня работает?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;900&family=Chakra+Petch:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090516;--panel:#140a2e;--line:#2c1b5c;--text:#e9e4ff;--dim:#7d6fb0;--yes:#b6ff3c;--no:#ff2bd6;--day:#ffb400;--night:#8c5cff;--vac:#00f0ff;--cur:var(--no)}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{min-height:100vh;color:var(--text);font-family:"Chakra Petch",system-ui,sans-serif;background:var(--bg);overflow-x:hidden;padding:0 16px 48px}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/48px 48px;opacity:.35;animation:grid 6s linear infinite;mask-image:linear-gradient(#000,transparent 85%)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.25) 2px 3px);mix-blend-mode:multiply}
+@keyframes grid{to{background-position:0 48px,48px 0}}
+.wrap{max-width:980px;margin:0 auto}
+.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:20px 0;color:var(--dim);font-size:14px}
+.top b{color:var(--vac);font-variant-numeric:tabular-nums}
+.top i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yes);margin-right:8px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.15}}
+.hero{text-align:center;padding:28px 0 20px}
+.q{font-family:Unbounded,sans-serif;font-weight:500;font-size:clamp(18px,4.2vw,36px);letter-spacing:.02em}
+.big{position:relative;display:inline-block;font-family:Unbounded,sans-serif;font-weight:900;font-size:clamp(110px,30vw,300px);line-height:1;margin:10px 0;color:var(--cur);text-shadow:0 0 24px var(--cur),0 0 80px var(--cur);animation:pop .7s cubic-bezier(.2,1.6,.4,1) both}
+.big::before,.big::after{content:attr(data-t);position:absolute;inset:0;overflow:hidden}
+.big::before{color:var(--vac);left:3px;animation:gl1 3.2s infinite steps(1);text-shadow:none;mix-blend-mode:screen}
+.big::after{color:var(--day);left:-3px;animation:gl2 3.2s infinite steps(1);text-shadow:none;mix-blend-mode:screen}
+@keyframes pop{from{transform:scale(.3) rotate(-8deg);opacity:0}}
+@keyframes gl1{0%,88%,100%{clip-path:inset(0 0 100% 0)}90%{clip-path:inset(10% 0 60% 0)}94%{clip-path:inset(55% 0 20% 0)}}
+@keyframes gl2{0%,89%,100%{clip-path:inset(0 0 100% 0)}92%{clip-path:inset(40% 0 35% 0)}96%{clip-path:inset(75% 0 5% 0)}}
+.sub{font-size:clamp(16px,2.6vw,22px);color:var(--text)}
+.cd{display:inline-flex;gap:14px;margin-top:18px;padding:12px 20px;border:1px solid var(--cur);border-radius:6px;background:rgba(20,10,46,.8);box-shadow:0 0 22px -6px var(--cur);font-variant-numeric:tabular-nums}
+.cd span{font-size:13px;color:var(--dim);align-self:center}
+.cd b{font-family:Unbounded,sans-serif;font-weight:500;font-size:clamp(16px,3vw,24px);color:var(--cur)}
+h2{font-family:Unbounded,sans-serif;font-weight:500;font-size:20px;margin:44px 0 14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:14px;color:var(--dim)}
+.legend em{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.legend em::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c);box-shadow:0 0 10px var(--c)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow{font-size:13px;text-align:center;color:var(--dim);padding-bottom:4px}
+.c{position:relative;min-height:84px;padding:8px;border-radius:8px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;opacity:0;animation:in .5s calc(var(--i)*25ms + .3s) forwards}
+.c.e{background:none;border-color:transparent}
+@keyframes in{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1}}
+.n{font-weight:600;font-size:15px;color:var(--dim)}
+.t{font-size:12px;font-weight:600;line-height:1.2}
+.t small{display:block;font-weight:400;opacity:.8}
+.c.DP{--k:var(--day)}.c.NB{--k:var(--night)}.c.DOV{--k:var(--vac)}
+.c.DP,.c.NB,.c.DOV{background:linear-gradient(160deg,color-mix(in srgb,var(--k) 28%,var(--panel)),var(--panel));border-color:var(--k);box-shadow:0 0 14px -6px var(--k)}
+.c.DP .n,.c.NB .n,.c.DOV .n{color:var(--k)}.c .t{color:var(--k)}
+.c.today{outline:2px solid var(--no);outline-offset:2px;animation:in .5s calc(var(--i)*25ms + .3s) forwards,pulse 1.6s 1.2s infinite}
+.c.today::after{content:"сегодня";position:absolute;top:6px;right:6px;font-size:10px;color:var(--no)}
+@keyframes pulse{50%{outline-color:transparent;box-shadow:0 0 22px 2px var(--no)}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.s{padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.s b{display:block;font-family:Unbounded,sans-serif;font-size:30px;color:var(--k)}
+.s span{font-size:13px;color:var(--dim)}
+footer{margin-top:36px;text-align:center;color:var(--dim);font-size:13px}
+@media(max-width:560px){.c{min-height:62px;padding:5px}.t small{display:none}.t{font-size:10px}.n{font-size:13px}.c.today::after{display:none}.cal{gap:4px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}.c{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span><i></i>Прага: <b id="clock">--:--:--</b></span><span id="date"></span></div>
+  <section class="hero" aria-live="polite">
+    <div class="q">МИША СЕГОДНЯ РАБОТАЕТ?</div>
+    <div class="big" id="big" data-t="…">…</div>
+    <div class="sub" id="sub"></div>
+    <div class="cd" id="cdbox"><span id="cdlabel"></span><b id="cd"></b></div>
+  </section>
+
+  <h2>График на ноябрь 2026</h2>
+  <div class="legend">
+    <em style="--c:var(--day)">Дневная 07:00–19:00</em>
+    <em style="--c:var(--night)">Ночная 19:00–07:00</em>
+    <em style="--c:var(--vac)">Отпуск</em>
+    <em style="--c:var(--line)">Выходной</em>
+  </div>
+  <div class="cal" id="cal"></div>
+
+  <h2>Ноябрь в цифрах</h2>
+  <div class="stats" id="stats"></div>
+  <footer>Время считается по Праге. Проверка другого дня: добавь к адресу ?date=2026-11-11&amp;h=20</footer>
+</div>
+
+<script>
+// ===== НАСТРОЙКИ: правь здесь =====
+const YEAR = 2026, MONTH = 11;
+const DAY_START = 7, NIGHT_START = 19, SHIFT_HOURS = 12;
+// DP = дневная, NB = ночная, DOV = отпуск. Остальные дни — выходные.
+const PLAN = {1:"DOV",2:"DOV",6:"DP",7:"DP",11:"NB",15:"DP",16:"DP",18:"NB",20:"NB",22:"NB",24:"DP",25:"DP",28:"DP",29:"NB"};
+// ==================================
+
+const pad = n => String(n).padStart(2,"0");
+const fmt = new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"});
+function now(){
+  const p = Object.fromEntries(fmt.formatToParts(new Date()).map(x=>[x.type,x.value]));
+  let o = {y:+p.year,m:+p.month,d:+p.day,h:+p.hour,mi:+p.minute,s:+p.second};
+  const q = new URLSearchParams(location.search), qd = q.get("date");
+  if(qd && /^\d{4}-\d{2}-\d{2}$/.test(qd)){const a=qd.split("-");o.y=+a[0];o.m=+a[1];o.d=+a[2];o.h=q.get("h")?+q.get("h"):12;o.mi=0;o.s=0}
+  return o;
+}
+const utc = (d,h) => Date.UTC(YEAR,MONTH-1,d,h);
+const startOf = d => utc(d, PLAN[d]==="NB" ? NIGHT_START : DAY_START);
+const shifts = Object.keys(PLAN).map(Number).filter(d=>PLAN[d]!=="DOV").sort((a,b)=>a-b).map(d=>({d,t:PLAN[d],s:startOf(d),e:startOf(d)+SHIFT_HOURS*36e5}));
+const hhmm = ms => {const x=new Date(ms);return pad(x.getUTCHours())+":"+pad(x.getUTCMinutes())};
+const dur = ms => {ms=Math.max(0,ms);const s=Math.floor(ms/1000);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),c=s%60;return (d?d+"д ":"")+pad(h)+":"+pad(m)+":"+pad(c)};
+const ru = (d)=>["вс","пн","вт","ср","чт","пт","сб"][new Date(Date.UTC(YEAR,MONTH-1,d)).getUTCDay()];
+
+function render(){
+  const n = now(), T = Date.UTC(n.y,n.m-1,n.d,n.h,n.mi,n.s);
+  document.getElementById("clock").textContent = pad(n.h)+":"+pad(n.mi)+":"+pad(n.s);
+  document.getElementById("date").textContent = pad(n.d)+"."+pad(n.m)+"."+n.y;
+  const big=document.getElementById("big"), sub=document.getElementById("sub"), root=document.documentElement.style;
+  const cur = shifts.find(x=>T>=x.s && T<x.e);
+  const next = shifts.find(x=>x.s>T);
+  const inMonth = n.y===YEAR && n.m===MONTH;
+  let word, color, text, label="", cd="";
+  if(!inMonth){word="?";color="var(--dim)";text="В графике только ноябрь 2026";document.getElementById("cdbox").style.display="none"}
+  else{
+    document.getElementById("cdbox").style.display="";
+    const today = PLAN[n.d], prevNight = PLAN[n.d-1]==="NB" && n.h<DAY_START;
+    if(cur){
+      word="ДА";color="var(--yes)";
+      text="Сейчас на смене ("+(cur.t==="NB"?"ночная":"дневная")+") до "+hhmm(cur.e);
+      label="До конца смены";cd=dur(cur.e-T);
+    }else if(today==="DP"||today==="NB"){
+      word="ДА";color="var(--yes)";
+      text = T<startOf(n.d) ? "Сегодня "+(today==="NB"?"ночная":"дневная")+" смена, начало в "+hhmm(startOf(n.d)) : "Смена на сегодня уже закончилась";
+      if(next){label="До следующей смены";cd=dur(next.s-T)}
+    }else{
+      word="НЕТ";color=today==="DOV"?"var(--vac)":"var(--no)";
+      text = today==="DOV" ? "Миша в отпуске" : "Сегодня у Миши выходной";
+      if(next){text+=" · следующая смена: "+ru(next.d)+", "+next.d+" ноября ("+(next.t==="NB"?"ночь":"день")+")";label="До смены";cd=dur(next.s-T)}
+    }
+  }
+  big.textContent=word;big.dataset.t=word;root.setProperty("--cur",color);sub.textContent=text;
+  document.getElementById("cdlabel").textContent=label;document.getElementById("cd").textContent=cd;
+  document.getElementById("cdbox").style.visibility=cd?"visible":"hidden";
+  document.querySelectorAll(".c.today").forEach(e=>e.classList.remove("today"));
+  if(inMonth){const el=document.getElementById("d"+n.d);if(el)el.classList.add("today")}
+}
+
+// календарь
+const cal=document.getElementById("cal");
+["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].forEach(x=>{const e=document.createElement("div");e.className="dow";e.textContent=x;cal.appendChild(e)});
+const first=(new Date(Date.UTC(YEAR,MONTH-1,1)).getUTCDay()+6)%7, days=new Date(Date.UTC(YEAR,MONTH,0)).getUTCDate();
+let i=0;
+for(let k=0;k<first;k++){const e=document.createElement("div");e.className="c e";cal.appendChild(e)}
+const NAME={DP:["День","07–19"],NB:["Ночь","19–07"],DOV:["Отпуск",""]};
+for(let d=1;d<=days;d++){
+  const t=PLAN[d],e=document.createElement("div");
+  e.id="d"+d;e.className="c"+(t?" "+t:"");e.style.setProperty("--i",i++);
+  e.innerHTML='<span class="n">'+d+'</span>'+(t?'<span class="t">'+NAME[t][0]+(NAME[t][1]?'<small>'+NAME[t][1]+'</small>':'')+'</span>':'');
+  cal.appendChild(e);
+}
+// статистика
+const cnt=t=>Object.values(PLAN).filter(x=>x===t).length;
+const off=days-Object.keys(PLAN).length;
+document.getElementById("stats").innerHTML=[["DP","Дневных смен",cnt("DP")],["NB","Ночных смен",cnt("NB")],["DOV","Дней отпуска",cnt("DOV")],["",  "Выходных",off]]
+ .map(a=>'<div class="s" style="--k:'+({DP:"var(--day)",NB:"var(--night)",DOV:"var(--vac)"}[a[0]]||"var(--yes)")+'"><b>'+a[2]+'</b><span>'+a[1]+'</span></div>').join("");
+
+render();setInterval(render,1000);
+</script>
+</body>
+</html>
